@@ -1,0 +1,17 @@
+{
+  "name": "jraphql",
+  "version": "0.0.1",
+  "description": "Transform Flat File JSON to a GrpahQL Schema",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/meiamsome/jraphQL.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/meiamsome/jraphQL/issues"
+  },
+  "homepage": "https://github.com/meiamsome/jraphQL#readme"
+}
