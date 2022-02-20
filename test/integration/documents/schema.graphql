@@ -1,3 +1,12 @@
 type Query {
     values: [Int!]!
+    valueTypes: [ValueType!]!
+}
+
+type ValueType {
+    booleanValue: Boolean!
+    intValue: Int!
+    nullableValue: Int
+    stringValue: String!
+    valueType: ValueType
 }

@@ -1,3 +1,32 @@
 {
-    "values": [1, 2, 3, 4]
+    "values": [1, 2, 3, 4],
+    "valueTypes": [
+        {
+            "booleanValue": false,
+            "intValue": 1,
+            "nullableValue": 1,
+            "stringValue": "test1",
+            "valueType": null
+        },
+        {
+            "booleanValue": true,
+            "intValue": 2,
+            "nullableValue": null,
+            "stringValue": "test2",
+            "valueType": {
+                "booleanValue": true,
+                "intValue": 3,
+                "nullableValue": null,
+                "stringValue": "test3",
+                "valueType":
+                {
+                    "booleanValue": true,
+                    "intValue": 4,
+                    "nullableValue": null,
+                    "stringValue": "test4",
+                    "valueType": null
+                }
+            }
+        }
+    ]
 }
