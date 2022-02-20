@@ -1,31 +1,10 @@
 import { buildSchema, GraphQLSchema } from 'graphql';
-
-function isObject(value: unknown): value is Record<string, unknown> {
-    if (typeof value !== 'object') return false;
-    if (value === null) return false;
-
-    return true;
-}
-
-function isStringMap(value: unknown): value is Record<string, string> {
-    if (!isObject(value)) return false;
-
-    return Object.values(value).every((item) => typeof item === 'string');
-}
-
-function isPromise(value: unknown): value is Promise<unknown> {
-    if (!isObject(value)) return false;
-
-    return typeof value?.then === 'function';
-}
-
-type MaybePromise<T> = T | Promise<T>;
-
-function maybeThen<T, U>(value: MaybePromise<T>, fn: (arg: T) => MaybePromise<U>): MaybePromise<U> {
-    if (isPromise(value)) return value.then(fn);
-
-    return fn(value);
-}
+import {
+    isObject,
+    isStringMap,
+    MaybePromise,
+    maybeThen,
+} from './tsutil';
 
 type Fetcher = (path: string) => MaybePromise<string>;
 type CreateSchemaOptions = {

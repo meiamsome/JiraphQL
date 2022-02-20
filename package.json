@@ -5,7 +5,8 @@
   "scripts": {
     "lint": "eslint . --ext .ts",
     "test:integration": "jest test/integration/",
-    "test": "npm run test:integration"
+    "test:unit": "jest src/",
+    "test": "npm run test:unit && npm run test:integration"
   },
   "repository": {
     "type": "git",
