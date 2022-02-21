@@ -1,4 +1,12 @@
 {
+    "primaryTypes": [
+        {
+            "name": "test1"
+        },
+        {
+            "name": "test2"
+        }
+    ],
     "values": [1, 2, 3, 4],
     "valueTypes": [
         {

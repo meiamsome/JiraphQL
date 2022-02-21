@@ -1,4 +1,8 @@
+scalar _FieldSet
+directive @key(fields: _FieldSet!) repeatable on OBJECT | INTERFACE
+
 type Query {
+    primaryTypes: [PrimaryType!]!
     values: [Int!]!
     valueTypes: [ValueType!]!
 }
@@ -9,4 +13,10 @@ type ValueType {
     nullableValue: Int
     stringValue: String!
     valueType: ValueType
+}
+
+type PrimaryType @key(fields: "name") {
+    name: String!
+    other: PrimaryType!
+    value: Int!
 }

@@ -15,6 +15,7 @@ module.exports = {
     ],
     root: true,
     rules: {
+        'no-continue': 0,
         'no-restricted-syntax': [
             'error',
             {

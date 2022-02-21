@@ -1,0 +1,7 @@
+{
+    "name": "test2",
+    "other": {
+        "name": "test1"
+    },
+    "value": 20
+}

@@ -1,4 +1,6 @@
-import { buildSchema, GraphQLSchema } from 'graphql';
+import { buildSchema, GraphQLObjectType, GraphQLSchema } from 'graphql';
+import jsonStableStringify from 'json-stable-stringify';
+import { isPrimaryType } from './schemaUtil';
 import {
     isObject,
     isStringMap,
@@ -23,7 +25,13 @@ function defaultKeyLookupFunction(
 
         return data;
     });
-    return maybeThen(lookupTableMaybePromise, (lookupTable) => lookupTable[JSON.stringify(key)]);
+    const encodedKey = jsonStableStringify(key);
+    return maybeThen(lookupTableMaybePromise, (lookupTable) => {
+        if (!Object.prototype.hasOwnProperty.call(lookupTable, encodedKey)) {
+            throw new Error(`Failed to find a key in the index: '${encodedKey}'.`);
+        }
+        return lookupTable[encodedKey];
+    });
 }
 
 export function createSchema(
@@ -37,24 +45,27 @@ export function createSchema(
     const schemaMaybe = maybeThen(schemaDocumentFetch, buildSchema);
 
     return maybeThen(schemaMaybe, (schema) => {
-        const type = schema.getQueryType();
-        if (!type) {
-            throw new Error('Schema does not declare a query type.');
-        }
-        for (const [fieldName, fieldDefinition] of Object.entries(type.getFields())) {
-            fieldDefinition.resolve = () => {
-                const key = {
-                    __typename: 'Query',
+        for (const type of Object.values(schema.getTypeMap())) {
+            if (!(type instanceof GraphQLObjectType)) continue;
+
+            if (!isPrimaryType(type, schema)) continue;
+
+            for (const [fieldName, fieldDefinition] of Object.entries(type.getFields())) {
+                fieldDefinition.resolve = (parent: Record<string, unknown>) => {
+                    const key = {
+                        ...parent,
+                        __typename: type.name,
+                    };
+                    const filenameMaybePromise = keyLookupFunction(key, fetcher);
+                    const fileFetch = maybeThen(filenameMaybePromise, fetcher);
+                    const dataMaybePromise = maybeThen(fileFetch, (file) => {
+                        const data: unknown = JSON.parse(file);
+                        if (!isObject(data)) throw new Error('File did not include expected data.');
+                        return data;
+                    });
+                    return maybeThen(dataMaybePromise, (data) => data[fieldName]);
                 };
-                const filenameMaybePromise = keyLookupFunction(key, fetcher);
-                const fileFetch = maybeThen(filenameMaybePromise, fetcher);
-                const dataMaybePromise = maybeThen(fileFetch, (file) => {
-                    const data: unknown = JSON.parse(file);
-                    if (!isObject(data)) throw new Error('File did not include expected data.');
-                    return data;
-                });
-                return maybeThen(dataMaybePromise, (data) => data[fieldName]);
-            };
+            }
         }
 
         return schema;
