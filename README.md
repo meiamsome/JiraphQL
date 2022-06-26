@@ -1,1 +1,1 @@
-# JraphQL
+# JiraphQL

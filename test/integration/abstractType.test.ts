@@ -4,7 +4,7 @@ import { join } from 'path';
 import { execute, GraphQLSchema, parse } from 'graphql';
 import { createSchema } from '../../src';
 
-describe('JraphQL Abstract Types', () => {
+describe('JiraphQL Abstract Types', () => {
     const schema = createSchema((file) => readFileSync(join(__dirname, 'documents', file)).toString()) as GraphQLSchema;
 
     it('can resolve an union of primary types', () => {

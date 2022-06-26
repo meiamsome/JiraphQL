@@ -5,7 +5,7 @@ import { join } from 'path';
 import { execute, GraphQLSchema, parse } from 'graphql';
 import { createSchema } from '../../src';
 
-describe('JraphQL', () => {
+describe('JiraphQL', () => {
     describe('synchronously', () => {
         const schema = createSchema((file) => readFileSync(join(__dirname, 'documents', file)).toString()) as GraphQLSchema;
 

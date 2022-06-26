@@ -4,7 +4,7 @@ import { join } from 'path';
 import { execute, GraphQLSchema, parse } from 'graphql';
 import { createSchema } from '../../src';
 
-describe('JraphQL Value Type', () => {
+describe('JiraphQL Primary Type', () => {
     const schema = createSchema((file) => readFileSync(join(__dirname, 'documents', file)).toString()) as GraphQLSchema;
 
     it('can get sub value type fields.', () => {
