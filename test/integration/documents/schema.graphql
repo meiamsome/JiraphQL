@@ -29,7 +29,13 @@ type ValueType implements MixedTypeInterface {
     value: Int!
 }
 
-type PrimaryType implements PrimaryTypeInterface & MixedTypeInterface @key(fields: "name") @key(fields: "name2") {
+type PrimaryType
+    implements PrimaryTypeInterface & MixedTypeInterface
+    @key(fields: "name")
+    @key(fields: "name2")
+    @key(fields: "name other { name name2 }")
+    @key(fields: "name other { name name2 other { other { other { name } } } }")
+{
     name: String!
     name2: String!
     other: PrimaryType!

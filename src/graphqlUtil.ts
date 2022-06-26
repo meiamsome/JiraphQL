@@ -6,6 +6,9 @@ import {
     GraphQLType,
     isInputType,
     isOutputType,
+    Kind,
+    parse,
+    SelectionSetNode,
 } from 'graphql';
 
 export function mapType(type: GraphQLType, types: GraphQLNamedType[]): GraphQLType {
@@ -54,4 +57,18 @@ export function mapFieldTypes<TSource, TContext, TArgs>(
         args,
         type,
     };
+}
+
+export function parseKeyFields(fields: string): SelectionSetNode {
+    const parseResult = parse(`
+        fragment X on Y { ${fields} }
+    `);
+    if (parseResult.kind !== Kind.DOCUMENT) {
+        throw new Error('Unreachable: Document is a document.');
+    }
+    const fragment = parseResult.definitions[0];
+    if (fragment?.kind !== Kind.FRAGMENT_DEFINITION) {
+        throw new Error('Unreachable: Document has only one fragment.');
+    }
+    return fragment.selectionSet;
 }

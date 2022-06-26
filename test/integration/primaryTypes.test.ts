@@ -146,4 +146,79 @@ describe('JraphQL Value Type', () => {
             },
         });
     });
+
+    it('Autogenerates Query.primaryTypeByName field', () => {
+        const result = execute({
+            schema,
+            document: parse(`
+                query {
+                    primaryTypeByName(name: "test1") {
+                        id
+                        name
+                    }
+                }
+            `),
+        });
+
+        expect(result).toEqual({
+            data: {
+                primaryTypeByName: {
+                    id: '{"__typename":"PrimaryType","name":"test1"}',
+                    name: 'test1',
+                },
+            },
+        });
+    });
+
+    it('Autogenerates Query.primaryTypeByName2 field', () => {
+        const result = execute({
+            schema,
+            document: parse(`
+                query {
+                    primaryTypeByName2(name2: "test1") {
+                        id
+                        name
+                    }
+                }
+            `),
+        });
+
+        expect(result).toEqual({
+            data: {
+                primaryTypeByName2: {
+                    id: '{"__typename":"PrimaryType","name":"test1"}',
+                    name: 'test1',
+                },
+            },
+        });
+    });
+
+    it('Autogenerates Query.primaryTypeByNameOther_NameName2_ field', () => {
+        const result = execute({
+            schema,
+            document: parse(`
+                query {
+                    primaryTypeByNameOther_NameName2_(
+                        name: "test1"
+                        other: {
+                            name: "test2"
+                            name2: "test2"
+                        }
+                    ) {
+                        id
+                        name
+                    }
+                }
+            `),
+        });
+
+        expect(result).toEqual({
+            data: {
+                primaryTypeByNameOther_NameName2_: {
+                    id: '{"__typename":"PrimaryType","name":"test1"}',
+                    name: 'test1',
+                },
+            },
+        });
+    });
 });

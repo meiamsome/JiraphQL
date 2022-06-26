@@ -1,7 +1,9 @@
 {
     "{\"__typename\":\"PrimaryType\",\"name\":\"test1\"}": "primaryType1.json",
+    "{\"__typename\":\"PrimaryType\",\"name\":\"test1\",\"other\":{\"name\":\"test2\",\"name2\":\"test2\"}}": "primaryType1.json",
     "{\"__typename\":\"PrimaryType\",\"name2\":\"test1\"}": "primaryType1.json",
     "{\"__typename\":\"PrimaryType\",\"name\":\"test2\"}": "primaryType2.json",
+    "{\"__typename\":\"PrimaryType\",\"name\":\"test2\",\"other\":{\"name\":\"test1\",\"name2\":\"test1\"}}": "primaryType1.json",
     "{\"__typename\":\"PrimaryType\",\"name2\":\"test2\"}": "primaryType2.json",
     "{\"__typename\":\"Query\"}": "Query.json",
     "{\"__typename\":\"SecondPrimaryType\",\"test\":100}": "secondPrimaryType.json"

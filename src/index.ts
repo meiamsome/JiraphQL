@@ -16,6 +16,7 @@ import { CreateSchemaOptions, Fetcher, KeyLookupFunction } from './configTypes';
 import { addNodeIdField } from './globalObjectIdentification/nodeIdFieldResolver';
 import { createQueryNodeFieldAdder } from './globalObjectIdentification/queryNodeFieldResolver';
 import { mapFieldTypes, mapType } from './graphqlUtil';
+import { createQueryByKeyAdder } from './queryByKey';
 import { isPrimaryType } from './schemaUtil';
 import {
     isObject,
@@ -87,6 +88,7 @@ export function createSchema(
     return maybeThen(schemaMaybe, (schema) => {
         let queryType = null;
         const types: GraphQLNamedType[] = [];
+        const primaryTypes: GraphQLObjectType[] = [];
 
         const nodeInterface = new GraphQLInterfaceType({
             name: 'Node',
@@ -183,6 +185,15 @@ export function createSchema(
                         nodeInterface,
                     ),
                 );
+
+                fieldThunk = thunkMap(
+                    fieldThunk,
+                    createQueryByKeyAdder(
+                        schema,
+                        types,
+                        primaryTypes,
+                    ),
+                );
             }
 
             const newType = new GraphQLObjectType({
@@ -192,6 +203,9 @@ export function createSchema(
             });
 
             types.push(newType);
+            if (isPrimaryType(type, schema)) {
+                primaryTypes.push(newType);
+            }
             if (schema.getQueryType() === type) {
                 queryType = newType;
             }
