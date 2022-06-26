@@ -5,6 +5,9 @@
             "booleanValue": false,
             "intValue": 1,
             "nullableValue": 1,
+            "primaryType": {
+                "name": "test1"
+            },
             "stringValue": "test1",
             "valueType": null
         },
@@ -23,6 +26,9 @@
             "booleanValue": false,
             "intValue": 1,
             "nullableValue": 1,
+            "primaryType": {
+                "name": "test1"
+            },
             "stringValue": "test1",
             "valueType": null
         },
@@ -69,6 +75,9 @@
             "booleanValue": false,
             "intValue": 1,
             "nullableValue": 1,
+            "primaryType": {
+                "name": "test1"
+            },
             "stringValue": "test1",
             "valueType": null
         },
@@ -76,17 +85,26 @@
             "booleanValue": true,
             "intValue": 2,
             "nullableValue": null,
+            "primaryType": {
+                "name": "test2"
+            },
             "stringValue": "test2",
             "valueType": {
                 "booleanValue": true,
                 "intValue": 3,
                 "nullableValue": null,
+                "primaryType": {
+                    "name": "test1"
+                },
                 "stringValue": "test3",
                 "valueType":
                 {
                     "booleanValue": true,
                     "intValue": 4,
                     "nullableValue": null,
+                    "primaryType": {
+                        "name": "test1"
+                    },
                     "stringValue": "test4",
                     "valueType": null
                 }

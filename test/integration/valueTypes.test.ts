@@ -85,4 +85,36 @@ describe('JraphQL Value Type', () => {
             },
         });
     });
+
+    it('can go to a PrimaryType', () => {
+        const result = execute({
+            schema,
+            document: parse(`
+                query {
+                    valueTypes {
+                        primaryType {
+                            name
+                        }
+                    }
+                }
+            `),
+        });
+
+        expect(result).toEqual({
+            data: {
+                valueTypes: [
+                    {
+                        primaryType: {
+                            name: 'test1',
+                        },
+                    },
+                    {
+                        primaryType: {
+                            name: 'test2',
+                        },
+                    },
+                ],
+            },
+        });
+    });
 });

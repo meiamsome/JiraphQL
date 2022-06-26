@@ -23,6 +23,7 @@ type ValueType implements MixedTypeInterface {
     booleanValue: Boolean!
     intValue: Int!
     nullableValue: Int
+    primaryType: PrimaryType!
     stringValue: String!
     valueType: ValueType
     value: Int!
