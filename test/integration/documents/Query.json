@@ -40,7 +40,7 @@
             "name": "test1"
         },
         {
-            "name": "test2"
+            "name2": "test2"
         }
     ],
     "primaryTypeInterface": [

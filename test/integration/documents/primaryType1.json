@@ -1,5 +1,6 @@
 {
     "name": "test1",
+    "name2": "test1",
     "other": {
         "name": "test2"
     },
