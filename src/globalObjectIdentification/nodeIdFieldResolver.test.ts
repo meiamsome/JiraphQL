@@ -12,7 +12,7 @@ import {
 } from 'graphql';
 import { addNodeIdField, nodeIdFieldResolver } from './nodeIdFieldResolver';
 
-jest.mock('graphql', () => ({
+jest.mock('graphql', (): unknown => ({
     ...jest.requireActual('graphql'),
     execute: jest.fn(),
 }));
