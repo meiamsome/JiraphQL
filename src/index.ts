@@ -1,14 +1,21 @@
 import {
     buildSchema,
     GraphQLFieldConfig,
+    GraphQLID,
+    GraphQLInterfaceType,
     GraphQLNamedType,
+    GraphQLNonNull,
     GraphQLObjectType,
     GraphQLSchema,
     GraphQLUnionType,
+    isInterfaceType,
     isObjectType,
 } from 'graphql';
 import jsonStableStringify from 'json-stable-stringify';
-import { mapFieldTypes } from './graphqlUtil';
+import { CreateSchemaOptions, Fetcher, KeyLookupFunction } from './configTypes';
+import { addNodeIdField } from './globalObjectIdentification/nodeIdFieldResolver';
+import { createQueryNodeFieldAdder } from './globalObjectIdentification/queryNodeFieldResolver';
+import { mapFieldTypes, mapType } from './graphqlUtil';
 import { isPrimaryType } from './schemaUtil';
 import {
     isObject,
@@ -17,15 +24,10 @@ import {
     maybeThen,
 } from './tsutil';
 
-type Fetcher = (path: string) => MaybePromise<string>;
-type CreateSchemaOptions = {
-    keyLookupFunction?: (key: Record<string, unknown>, fetcher: Fetcher) => MaybePromise<string>,
-};
-
 function defaultKeyLookupFunction(
     key: Record<string, unknown>,
     fetcher: Fetcher,
-): MaybePromise<string> {
+): MaybePromise<string | null> {
     const lookupTableFetch = fetcher('index.json');
 
     const lookupTableMaybePromise = maybeThen(lookupTableFetch, (lookupTableString) => {
@@ -35,12 +37,7 @@ function defaultKeyLookupFunction(
         return data;
     });
     const encodedKey = jsonStableStringify(key);
-    return maybeThen(lookupTableMaybePromise, (lookupTable) => {
-        if (!Object.prototype.hasOwnProperty.call(lookupTable, encodedKey)) {
-            throw new Error(`Failed to find a key in the index: '${encodedKey}'.`);
-        }
-        return lookupTable[encodedKey];
-    });
+    return maybeThen(lookupTableMaybePromise, (lookupTable) => lookupTable[encodedKey] ?? null);
 }
 
 function thunkMap<T, U>(thunk: () => T, map: (arg: T) => U): () => U {
@@ -50,7 +47,7 @@ function thunkMap<T, U>(thunk: () => T, map: (arg: T) => U): () => U {
 function addResolveDefinition<TSource, TContext, TArgs>(
     fieldConfig: GraphQLFieldConfig<TSource, TContext, TArgs>,
     fetcher: Fetcher,
-    keyLookupFunction: (key: Record<string, unknown>, fetcher: Fetcher) => MaybePromise<string>,
+    keyLookupFunction: KeyLookupFunction,
 ): GraphQLFieldConfig<TSource, TContext, TArgs> {
     return {
         ...fieldConfig,
@@ -60,7 +57,13 @@ function addResolveDefinition<TSource, TContext, TArgs>(
                 __typename: parentType.name,
             };
             const filenameMaybePromise = keyLookupFunction(key, fetcher);
-            const fileFetch = maybeThen(filenameMaybePromise, fetcher);
+            const requireExistenceMaybePromise = maybeThen(filenameMaybePromise, (res) => {
+                if (!res) {
+                    throw new Error('Failed to find key in index!');
+                }
+                return res;
+            });
+            const fileFetch = maybeThen(requireExistenceMaybePromise, fetcher);
             const dataMaybePromise = maybeThen(fileFetch, (file) => {
                 const data: unknown = JSON.parse(file);
                 if (!isObject(data)) throw new Error('File did not include expected data.');
@@ -84,6 +87,17 @@ export function createSchema(
     return maybeThen(schemaMaybe, (schema) => {
         let queryType = null;
         const types: GraphQLNamedType[] = [];
+
+        const nodeInterface = new GraphQLInterfaceType({
+            name: 'Node',
+            fields: {
+                id: {
+                    type: new GraphQLNonNull(GraphQLID),
+                },
+            },
+        });
+        types.push(nodeInterface);
+
         for (const type of Object.values(schema.getTypeMap())) {
             if (type.name.startsWith('__')) {
                 continue;
@@ -113,6 +127,7 @@ export function createSchema(
             const config = type.toConfig();
 
             let fieldThunk = () => config.fields;
+            let interfacesThunk = () => config.interfaces;
 
             fieldThunk = thunkMap(fieldThunk, (fields) => Object.fromEntries(
                 Object.entries(fields)
@@ -125,23 +140,55 @@ export function createSchema(
                     ]),
             ));
 
+            interfacesThunk = thunkMap(
+                interfacesThunk,
+                (interfaces) => interfaces.map((interfaceType) => {
+                    const mappedType = mapType(interfaceType, types);
+                    if (!isInterfaceType(mappedType)) {
+                        throw new Error('Failed to map interface to interface');
+                    }
+                    return mappedType;
+                }),
+            );
+
             if (isPrimaryType(type, schema)) {
-                fieldThunk = thunkMap(fieldThunk, (fields) => Object.fromEntries(
-                    Object.entries(fields)
-                        .map(([key, value]) => [
-                            key,
-                            addResolveDefinition(
-                                value,
-                                fetcher,
-                                keyLookupFunction,
-                            ),
-                        ]),
-                ));
+                fieldThunk = thunkMap(fieldThunk, (fields) => ({
+                    ...Object.fromEntries(
+                        Object.entries(fields)
+                            .map(([key, value]) => [
+                                key,
+                                addResolveDefinition(
+                                    value,
+                                    fetcher,
+                                    keyLookupFunction,
+                                ),
+                            ]),
+                    ),
+                }));
+
+                fieldThunk = thunkMap(fieldThunk, addNodeIdField);
+
+                interfacesThunk = thunkMap(interfacesThunk, (interfaces) => [
+                    ...interfaces,
+                    nodeInterface,
+                ]);
+            }
+
+            if (schema.getQueryType() === type) {
+                fieldThunk = thunkMap(
+                    fieldThunk,
+                    createQueryNodeFieldAdder(
+                        fetcher,
+                        keyLookupFunction,
+                        nodeInterface,
+                    ),
+                );
             }
 
             const newType = new GraphQLObjectType({
                 ...config,
                 fields: fieldThunk,
+                interfaces: interfacesThunk,
             });
 
             types.push(newType);

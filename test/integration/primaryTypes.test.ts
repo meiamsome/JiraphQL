@@ -117,4 +117,33 @@ describe('JraphQL Value Type', () => {
             },
         });
     });
+
+    it('provides an id field', () => {
+        const result = execute({
+            schema,
+            document: parse(`
+                query {
+                    primaryTypes {
+                        id
+                        name
+                    }
+                }
+            `),
+        });
+
+        expect(result).toEqual({
+            data: {
+                primaryTypes: [
+                    {
+                        id: '{"__typename":"PrimaryType","name":"test1"}',
+                        name: 'test1',
+                    },
+                    {
+                        id: '{"__typename":"PrimaryType","name":"test2"}',
+                        name: 'test2',
+                    },
+                ],
+            },
+        });
+    });
 });
