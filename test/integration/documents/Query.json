@@ -1,10 +1,66 @@
 {
+    "mixedTypeInterface": [
+        {
+            "__typename": "ValueType",
+            "booleanValue": false,
+            "intValue": 1,
+            "nullableValue": 1,
+            "stringValue": "test1",
+            "valueType": null
+        },
+        {
+            "__typename": "PrimaryType",
+            "name": "test2"
+        },
+        {
+            "__typename": "SecondPrimaryType",
+            "test": 100
+        }
+    ],
+    "mixedTypeUnion": [
+        {
+            "__typename": "ValueType",
+            "booleanValue": false,
+            "intValue": 1,
+            "nullableValue": 1,
+            "stringValue": "test1",
+            "valueType": null
+        },
+        {
+            "__typename": "PrimaryType",
+            "name": "test2"
+        },
+        {
+            "__typename": "SecondPrimaryType",
+            "test": 100
+        }
+    ],
     "primaryTypes": [
         {
             "name": "test1"
         },
         {
             "name": "test2"
+        }
+    ],
+    "primaryTypeInterface": [
+        {
+            "__typename": "PrimaryType",
+            "name": "test2"
+        },
+        {
+            "__typename": "SecondPrimaryType",
+            "test": 100
+        }
+    ],
+    "primaryTypeUnion": [
+        {
+            "__typename": "PrimaryType",
+            "name": "test2"
+        },
+        {
+            "__typename": "SecondPrimaryType",
+            "test": 100
         }
     ],
     "values": [1, 2, 3, 4],

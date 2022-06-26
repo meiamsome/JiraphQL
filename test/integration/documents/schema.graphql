@@ -2,21 +2,43 @@ scalar _FieldSet
 directive @key(fields: _FieldSet!) repeatable on OBJECT | INTERFACE
 
 type Query {
+    mixedTypeUnion: [MixedTypeUnion!]!
+    mixedTypeInterface: [MixedTypeInterface!]!
     primaryTypes: [PrimaryType!]!
+    primaryTypeUnion: [PrimaryTypeUnion!]!
+    primaryTypeInterface: [PrimaryTypeInterface!]!
     values: [Int!]!
     valueTypes: [ValueType!]!
 }
 
-type ValueType {
+interface MixedTypeInterface {
+    value: Int!
+}
+
+interface PrimaryTypeInterface implements MixedTypeInterface {
+    value: Int!
+}
+
+type ValueType implements MixedTypeInterface {
     booleanValue: Boolean!
     intValue: Int!
     nullableValue: Int
     stringValue: String!
     valueType: ValueType
+    value: Int!
 }
 
-type PrimaryType @key(fields: "name") {
+type PrimaryType implements PrimaryTypeInterface & MixedTypeInterface @key(fields: "name") {
     name: String!
     other: PrimaryType!
     value: Int!
 }
+
+type SecondPrimaryType implements PrimaryTypeInterface & MixedTypeInterface @key(fields: "test") {
+    test: Int!
+    value: Int!
+}
+
+union PrimaryTypeUnion = PrimaryType | SecondPrimaryType
+
+union MixedTypeUnion = PrimaryType | ValueType | SecondPrimaryType
