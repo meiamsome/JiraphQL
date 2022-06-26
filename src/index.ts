@@ -1,5 +1,14 @@
-import { buildSchema, GraphQLObjectType, GraphQLSchema } from 'graphql';
+import {
+    buildSchema,
+    GraphQLFieldConfig,
+    GraphQLNamedType,
+    GraphQLObjectType,
+    GraphQLSchema,
+    GraphQLUnionType,
+    isObjectType,
+} from 'graphql';
 import jsonStableStringify from 'json-stable-stringify';
+import { mapFieldTypes } from './graphqlUtil';
 import { isPrimaryType } from './schemaUtil';
 import {
     isObject,
@@ -34,6 +43,34 @@ function defaultKeyLookupFunction(
     });
 }
 
+function thunkMap<T, U>(thunk: () => T, map: (arg: T) => U): () => U {
+    return () => map(thunk());
+}
+
+function addResolveDefinition<TSource, TContext, TArgs>(
+    fieldConfig: GraphQLFieldConfig<TSource, TContext, TArgs>,
+    fetcher: Fetcher,
+    keyLookupFunction: (key: Record<string, unknown>, fetcher: Fetcher) => MaybePromise<string>,
+): GraphQLFieldConfig<TSource, TContext, TArgs> {
+    return {
+        ...fieldConfig,
+        resolve(parent, _args, _context, { fieldName, parentType }) {
+            const key = {
+                ...parent,
+                __typename: parentType.name,
+            };
+            const filenameMaybePromise = keyLookupFunction(key, fetcher);
+            const fileFetch = maybeThen(filenameMaybePromise, fetcher);
+            const dataMaybePromise = maybeThen(fileFetch, (file) => {
+                const data: unknown = JSON.parse(file);
+                if (!isObject(data)) throw new Error('File did not include expected data.');
+                return data;
+            });
+            return maybeThen(dataMaybePromise, (data) => data[fieldName]);
+        },
+    };
+}
+
 export function createSchema(
     fetcher: Fetcher,
     {
@@ -45,30 +82,78 @@ export function createSchema(
     const schemaMaybe = maybeThen(schemaDocumentFetch, buildSchema);
 
     return maybeThen(schemaMaybe, (schema) => {
+        let queryType = null;
+        const types: GraphQLNamedType[] = [];
         for (const type of Object.values(schema.getTypeMap())) {
-            if (!(type instanceof GraphQLObjectType)) continue;
+            if (type.name.startsWith('__')) {
+                continue;
+            }
 
-            if (!isPrimaryType(type, schema)) continue;
+            if (type instanceof GraphQLUnionType) {
+                const config = type.toConfig();
+                const newType = new GraphQLUnionType({
+                    ...config,
+                    types: () => config.types.map((subType) => {
+                        const foundType = types.find(({ name }) => name === subType.name);
+                        if (!foundType || !isObjectType(foundType)) {
+                            throw new Error('Failed to construct new schema!');
+                        }
+                        return foundType;
+                    }),
+                });
+                types.push(newType);
+                continue;
+            }
 
-            for (const [fieldName, fieldDefinition] of Object.entries(type.getFields())) {
-                fieldDefinition.resolve = (parent: Record<string, unknown>) => {
-                    const key = {
-                        ...parent,
-                        __typename: type.name,
-                    };
-                    const filenameMaybePromise = keyLookupFunction(key, fetcher);
-                    const fileFetch = maybeThen(filenameMaybePromise, fetcher);
-                    const dataMaybePromise = maybeThen(fileFetch, (file) => {
-                        const data: unknown = JSON.parse(file);
-                        if (!isObject(data)) throw new Error('File did not include expected data.');
-                        return data;
-                    });
-                    return maybeThen(dataMaybePromise, (data) => data[fieldName]);
-                };
+            if (!(type instanceof GraphQLObjectType)) {
+                types.push(type);
+                continue;
+            }
+
+            const config = type.toConfig();
+
+            let fieldThunk = () => config.fields;
+
+            fieldThunk = thunkMap(fieldThunk, (fields) => Object.fromEntries(
+                Object.entries(fields)
+                    .map(([key, value]) => [
+                        key,
+                        mapFieldTypes(
+                            value,
+                            types,
+                        ),
+                    ]),
+            ));
+
+            if (isPrimaryType(type, schema)) {
+                fieldThunk = thunkMap(fieldThunk, (fields) => Object.fromEntries(
+                    Object.entries(fields)
+                        .map(([key, value]) => [
+                            key,
+                            addResolveDefinition(
+                                value,
+                                fetcher,
+                                keyLookupFunction,
+                            ),
+                        ]),
+                ));
+            }
+
+            const newType = new GraphQLObjectType({
+                ...config,
+                fields: fieldThunk,
+            });
+
+            types.push(newType);
+            if (schema.getQueryType() === type) {
+                queryType = newType;
             }
         }
 
-        return schema;
+        return new GraphQLSchema({
+            types,
+            query: queryType,
+        });
     });
 }
 
